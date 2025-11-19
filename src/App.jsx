@@ -152,12 +152,7 @@ function Hero3D() {
 
 function HolographicCodeCard() {
   const [text, setText] = useState('')
-  const code = `import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-
-export default defineConfig({
-  plugins: [react()],
-})`
+  const code = `import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\nexport default defineConfig({\n  plugins: [react()],\n})`
   useEffect(() => {
     let i = 0
     const id = setInterval(() => {
@@ -321,6 +316,357 @@ function TypingEditor() {
   )
 }
 
+// Hook: intersection observer
+function useInView(options) {
+  const ref = useRef(null)
+  const [inView, setInView] = useState(false)
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true)
+      }
+    }, options || { threshold: 0.2 })
+    obs.observe(node)
+    return () => obs.disconnect()
+  }, [options])
+  return { ref, inView }
+}
+
+function StepNumber({ n }) {
+  return (
+    <div className="relative select-none">
+      <span className="block text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-[linear-gradient(135deg,#60A5FA,#A78BFA)]" style={{ WebkitTextStroke: '2px rgba(167,139,250,0.6)' }}>
+        {n}
+      </span>
+    </div>
+  )
+}
+
+function ChatBubbleTyping({ text }) {
+  const [content, setContent] = useState('')
+  useEffect(() => {
+    let i = 0
+    const id = setInterval(() => {
+      setContent(text.slice(0, i))
+      i = Math.min(i + 1, text.length)
+      if (i === text.length) clearInterval(id)
+    }, 25)
+    return () => clearInterval(id)
+  }, [text])
+  return (
+    <div className="flex items-start gap-3">
+      <img src={`https://i.pravatar.cc/40?img=15`} className="w-8 h-8 rounded-full border border-white/20" />
+      <div className="max-w-[320px] md:max-w-[420px] rounded-2xl px-4 py-3 bg-white/10 backdrop-blur-xl border border-white/15 shadow-[0_10px_40px_rgba(99,102,241,0.25)]">
+        <p className="text-white/90 text-sm md:text-base">
+          {content}
+          <span className="animate-pulse">▋</span>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function CodeWriter({ lines = 8, progress = 78 }) {
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 300)
+    return () => clearInterval(id)
+  }, [])
+  return (
+    <div className="w-full rounded-xl bg-slate-950/70 border border-white/10 p-4">
+      <div className="flex gap-2 mb-3">
+        <span className="w-3 h-3 rounded-full bg-red-400/80" />
+        <span className="w-3 h-3 rounded-full bg-yellow-400/80" />
+        <span className="w-3 h-3 rounded-full bg-emerald-400/80" />
+      </div>
+      <div className="font-mono text-xs md:text-sm text-white/80 space-y-1">
+        {Array.from({ length: lines }).map((_, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <span className="text-white/30 w-6 text-right">{i + 1}</span>
+            <span className="flex-1">
+              <span className="text-sky-300">const</span>{' '}<span className="text-pink-300">comp</span>{' '}=
+              {' '}<span className="text-emerald-300">() =&gt;</span>{' '}<span className="text-white">{'{'}</span>
+              {i < (tick % (lines + 1)) ? <span className="text-white/70"> {/* typed */} ...</span> : <span className="opacity-30"> //</span>}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 h-2 w-full rounded bg-white/10 overflow-hidden">
+        <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500" style={{ width: `${progress}%` }} />
+      </div>
+      <div className="mt-1 text-right text-xs text-white/60">Gerando componentes... {progress}%</div>
+    </div>
+  )
+}
+
+function SplitPreview() {
+  const [cursor, setCursor] = useState({ x: 40, y: 30 })
+  return (
+    <div className="relative w-full rounded-xl overflow-hidden border border-white/10 bg-slate-950/60">
+      <div className="grid grid-cols-1 md:grid-cols-2">
+        <div className="p-4 font-mono text-xs md:text-sm text-white/80 space-y-1">
+          {`<Hero title=\"DEV AI\" />`}
+          <div className="mt-2">color: <span className="text-sky-300">#60A5FA</span> → <span className="text-fuchsia-300">#A78BFA</span></div>
+          <div className="mt-2">button: <span className="text-emerald-300">primary</span></div>
+        </div>
+        <div className="relative min-h-[140px] md:min-h-[180px] bg-gradient-to-br from-slate-800/40 to-slate-900/60">
+          <motion.div
+            className="absolute w-6 h-6 rounded-full bg-white/90 text-slate-800 flex items-center justify-center text-xs"
+            animate={{ x: [20, 120, 60, 160], y: [20, 30, 80, 40] }}
+            transition={{ repeat: Infinity, duration: 4 }}
+          >
+            ⌁
+          </motion.div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="px-4 py-2 rounded-lg bg-white/10 border border-white/15 text-white/80">Preview</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SuccessVisual() {
+  return (
+    <div className="relative w-full rounded-xl border border-white/10 bg-slate-950/60 p-6 overflow-hidden">
+      <motion.div
+        className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center text-3xl shadow-[0_0_40px_rgba(16,185,129,0.5)]"
+        animate={{ scale: [1, 1.1, 1] }}
+        transition={{ repeat: Infinity, duration: 2 }}
+      >
+        ✓
+      </motion.div>
+      <div className="mt-4 text-center text-white/80">seuapp.vercel.app</div>
+      <motion.div className="absolute -top-4 right-6 text-3xl" animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 1.4 }}>⬇️</motion.div>
+      {/* confetti */}
+      {Array.from({ length: 18 }).map((_, i) => (
+        <motion.span
+          key={i}
+          className="absolute w-2 h-2 rounded-sm"
+          style={{ left: `${(i * 11) % 100}%`, top: -10, background: i % 2 ? '#60A5FA' : '#A78BFA' }}
+          animate={{ y: [0, 180], rotate: [0, 180] }}
+          transition={{ repeat: Infinity, duration: 2 + (i % 5) * 0.3, delay: i * 0.1 }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function Connector({ progress }) {
+  return (
+    <div className="absolute left-1/2 -translate-x-1/2 md:left-1/2 md:-translate-x-1/2 top-0 h-full w-1 md:w-[3px]">
+      <div className="relative h-full">
+        <div className="absolute left-1/2 -translate-x-1/2 w-[3px] h-full bg-white/5 rounded" />
+        <motion.div
+          className="absolute left-1/2 -translate-x-1/2 w-[3px] bg-gradient-to-b from-blue-500 to-purple-500 rounded"
+          style={{ height: `${progress * 100}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function HowItWorksSection() {
+  const containerRef = useRef(null)
+  const [progress, setProgress] = useState(0)
+
+  useEffect(() => {
+    const handler = () => {
+      const el = containerRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const vh = window.innerHeight
+      const total = rect.height - vh * 0.2
+      const passed = Math.min(Math.max(vh * 0.8 - rect.top, 0), total)
+      setProgress(total > 0 ? passed / total : 0)
+    }
+    handler()
+    window.addEventListener('scroll', handler, { passive: true })
+    window.addEventListener('resize', handler)
+    return () => {
+      window.removeEventListener('scroll', handler)
+      window.removeEventListener('resize', handler)
+    }
+  }, [])
+
+  return (
+    <section id="como-funciona" ref={containerRef} className="relative py-28 md:py-36">
+      <div className="absolute inset-0 bg-[radial-gradient(800px_400px_at_80%_10%,rgba(99,102,241,0.12),transparent),radial-gradient(900px_500px_at_20%_70%,rgba(14,165,233,0.1),transparent)]" />
+      <div className="relative z-10 max-w-6xl mx-auto px-6">
+        <h2 className="text-center text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-[linear-gradient(135deg,#60A5FA,#A78BFA)] mb-16">Do Zero ao Deploy em 4 Passos</h2>
+
+        <div className="relative">
+          <Connector progress={progress} />
+
+          <div className="space-y-24">
+            {/* Step 1 */}
+            <Step
+              index="01"
+              side="left"
+              visual={<ChatBubbleTyping text="Crie uma landing page para minha startup de IA" />}
+              title="Descreva Sua Ideia"
+              description="Converse naturalmente em português. Quanto mais detalhes, melhor o resultado."
+            />
+
+            {/* Step 2 */}
+            <Step
+              index="02"
+              side="right"
+              visual={<CodeWriter />}
+              title="IA Gera Código Profissional"
+              description="Claude AI analisa seu pedido e escreve React + TypeScript otimizado. Componentes reutilizáveis, código limpo."
+            />
+
+            {/* Step 3 */}
+            <Step
+              index="03"
+              side="left"
+              visual={<SplitPreview />}
+              title="Visualize e Ajuste em Tempo Real"
+              description="Cada mudança reflete instantaneamente. Não gostou? Só pedir ajustes. 'Mude a cor para azul', 'Adicione um footer'."
+            />
+
+            {/* Step 4 */}
+            <Step
+              index="04"
+              side="right"
+              visual={<SuccessVisual />}
+              title="Exporte ou Publique"
+              description="Baixe todo o código ou publique com um clique. Domínio gratuito incluído. Online em 30 segundos."
+            />
+          </div>
+        </div>
+
+        <div className="mt-16 flex justify-center">
+          <a href="#" className="group inline-flex items-center gap-3 px-8 py-5 rounded-2xl text-[20px] font-semibold bg-[linear-gradient(90deg,#2563EB,#7C3AED,#DB2777)] text-white shadow-[0_0_40px_rgba(124,58,237,0.5)] hover:shadow-[0_0_60px_rgba(124,58,237,0.7)] transition-transform hover:scale-[1.02]">
+            Experimentar Agora - Grátis <span className="text-2xl group-hover:translate-x-1 transition-transform">🚀</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Step({ index, side, visual, title, description }) {
+  const { ref, inView } = useInView({ threshold: 0.2 })
+  const isLeft = side === 'left'
+  return (
+    <div ref={ref} className="relative grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+      {/* Visual */}
+      <motion.div
+        initial={{ opacity: 0, x: isLeft ? -40 : 40 }}
+        animate={inView ? { opacity: 1, x: 0 } : {}}
+        transition={{ duration: 0.6 }}
+        className={`order-1 ${isLeft ? '' : 'md:order-2'}`}
+      >
+        {visual}
+      </motion.div>
+
+      {/* Content */}
+      <motion.div
+        initial={{ opacity: 0, x: isLeft ? 40 : -40 }}
+        animate={inView ? { opacity: 1, x: 0 } : {}}
+        transition={{ duration: 0.6, delay: 0.05 }}
+        className={`order-2 ${isLeft ? '' : 'md:order-1'}`}
+      >
+        <div className="flex items-start gap-4">
+          <StepNumber n={index} />
+          <div>
+            <h3 className="text-2xl md:text-3xl font-semibold text-white">{title}</h3>
+            <p className="mt-2 text-white/70 max-w-prose">{description}</p>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+function PricingSection() {
+  // hover tilt
+  const cardRef = useRef(null)
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
+  const onMove = (e) => {
+    const rect = cardRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const x = (e.clientX - rect.left) / rect.width
+    const y = (e.clientY - rect.top) / rect.height
+    setTilt({ ry: (x - 0.5) * 10, rx: -(y - 0.5) * 10 })
+  }
+  const onLeave = () => setTilt({ rx: 0, ry: 0 })
+
+  return (
+    <section className="relative py-28 md:py-36">
+      <div className="absolute inset-0 bg-[radial-gradient(800px_400px_at_30%_10%,rgba(99,102,241,0.12),transparent),radial-gradient(900px_500px_at_80%_70%,rgba(14,165,233,0.1),transparent)]" />
+      <div className="relative z-10 max-w-4xl mx-auto px-6">
+        <h2 className="text-center text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-[linear-gradient(135deg,#60A5FA,#A78BFA)] mb-14">Comece Grátis, Cresça Quando Quiser</h2>
+
+        <div className="relative flex justify-center">
+          {/* floating particles */}
+          {Array.from({ length: 16 }).map((_, i) => (
+            <motion.span
+              key={i}
+              className="pointer-events-none absolute w-2 h-2 rounded-full"
+              style={{ background: i % 2 ? '#60A5FA' : '#A78BFA', left: `${(i * 7) % 100}%`, top: `${(i * 13) % 100}%`, filter: 'blur(0.5px)' }}
+              animate={{ y: [0, -10, 0], opacity: [0.6, 1, 0.6] }}
+              transition={{ repeat: Infinity, duration: 3 + (i % 5) * 0.3, delay: i * 0.1 }}
+            />
+          ))}
+
+          <motion.div
+            ref={cardRef}
+            onMouseMove={onMove}
+            onMouseLeave={onLeave}
+            style={{ transform: `perspective(1000px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)` }}
+            className="relative w-full max-w-[500px] rounded-[32px] p-[2px] bg-[conic-gradient(from_0deg,rgba(99,102,241,0.8),rgba(168,85,247,0.8),rgba(219,39,119,0.8),rgba(99,102,241,0.8))] animate-[spin_8s_linear_infinite]"
+          >
+            <div className="rounded-[30px] p-12 bg-slate-900/70 backdrop-blur-xl border border-white/10 shadow-[0_0_80px_rgba(99,102,241,0.35),0_0_120px_rgba(168,85,247,0.25)] relative overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(600px_200px at 50% -20%, rgba(255,255,255,0.08), transparent)' }} />
+
+              <div className="mb-6 flex justify-center">
+                <span className="px-4 py-1.5 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-[0_0_20px_rgba(16,185,129,0.4)]">GRÁTIS PARA SEMPRE</span>
+              </div>
+
+              <div className="flex items-end justify-center gap-2">
+                <div className="text-transparent bg-clip-text bg-[linear-gradient(135deg,#FDE68A,#F59E0B)] text-[56px] md:text-[72px] leading-none font-black">R$ 0</div>
+                <div className="pb-2 text-white/70">/mês</div>
+              </div>
+
+              <div className="mt-2 text-center text-white/70">Perfeito para começar e validar ideias</div>
+
+              <ul className="mt-8 space-y-3">
+                {[
+                  '50 mensagens com IA por mês',
+                  '1 projeto ativo',
+                  'Export de código ilimitado',
+                  '3 templates profissionais',
+                  'Preview em tempo real',
+                  'Suporte via comunidade Discord',
+                  'Atualizações gratuitas',
+                ].map((t, i) => (
+                  <li key={t} className="flex items-center gap-3 text-[16px] text-white/90">
+                    <motion.span className="grid place-items-center w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white" whileHover={{ scale: 1.2 }}>✓</motion.span>
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <a href="#" className="mt-10 block w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-[18px] grid place-items-center shadow-[0_10px_40px_rgba(99,102,241,0.4)] hover:shadow-[0_10px_60px_rgba(99,102,241,0.6)] transition-transform hover:scale-[1.02]">
+                Criar Conta Gratuita →
+              </a>
+
+              <div className="mt-3 text-center text-sm text-white/60">Sem cartão de crédito. Sem pegadinhas.</div>
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="mt-10 text-center text-sm text-white/50">💎 Planos Pro e Enterprise em breve com mais recursos</div>
+      </div>
+    </section>
+  )
+}
+
 export default function App() {
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#0b1020,#0c0720_40%,#130d2e)] relative overflow-hidden">
@@ -329,6 +675,8 @@ export default function App() {
 
       <Hero />
       <FeaturesSection />
+      <HowItWorksSection />
+      <PricingSection />
     </div>
   )
 }
